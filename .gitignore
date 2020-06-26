@@ -76,6 +76,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -109,6 +110,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+bin/
+pyvenv.cfg
 
 # Spyder project settings
 .spyderproject
@@ -127,3 +130,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# long pool local dev bot
+dev_bot.py
