@@ -1,4 +1,5 @@
 import os
+import logging
 
 import requests
 from bs4 import BeautifulSoup
@@ -33,8 +34,12 @@ def download_image(message):
 
 def send_image(message):
     url: str = message.text
+    logging.info("url requested -  %s", url)
     image_obj = get_image(url)
     bot.send_photo(message.chat.id, image_obj)
+    logging.info(
+        "Image from url %s sent to chat id -  %s", url, message.chat.id
+    )
 
 
 @bot.message_handler(commands=["start", "help"])
