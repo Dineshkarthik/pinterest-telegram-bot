@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 from flask import Flask, request
 from telebot import TeleBot, types
 
+logging.basicConfig(level=logging.INFO)
+
 server = Flask(__name__)
 THIS_DIR: str = os.path.dirname(os.path.abspath(__file__))
 server.config.from_pyfile(os.path.join(THIS_DIR, "config.py"))
