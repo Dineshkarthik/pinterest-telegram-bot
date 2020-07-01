@@ -16,6 +16,12 @@ TOKEN: str = server.config["TOKEN"]
 bot = TeleBot(TOKEN)
 
 
+class InvalidUrlError(Exception):
+    """Base class for other exceptions"""
+
+    pass
+
+
 def get_image(_url: str):
     r = requests.get(
         _url, headers=server.config["HEADERS"], allow_redirects=True
@@ -35,13 +41,23 @@ def download_image(message):
 
 
 def send_image(message):
-    url: str = message.text
-    logging.info("%s - requested to download %s", message.chat.id, url)
-    image_obj = get_image(url)
     try:
+        url: str = message.text
+        logging.info("%s - requested to download %s", message.chat.id, url)
+        if not url.startswith("http"):
+            raise InvalidUrlError(f"'{url}' not a valid url")
+        image_obj = get_image(url)
         bot.send_photo(message.chat.id, image_obj)
         logging.info(
             "Image from url %s sent to chat id - %s", url, message.chat.id
+        )
+    except InvalidUrlError:
+        error_message = (
+            f"Invalid url - {url}.\n"
+            f"Please check the url and try after some time."
+        )
+        bot.send_message(
+            message.chat.id, error_message,
         )
     except Exception as e:
         error_message = (
