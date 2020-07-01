@@ -36,12 +36,22 @@ def download_image(message):
 
 def send_image(message):
     url: str = message.text
-    logging.info("url requested -  %s", url)
+    logging.info("%s - requested to download %s", message.chat.id, url)
     image_obj = get_image(url)
-    bot.send_photo(message.chat.id, image_obj)
-    logging.info(
-        "Image from url %s sent to chat id -  %s", url, message.chat.id
-    )
+    try:
+        bot.send_photo(message.chat.id, image_obj)
+        logging.info(
+            "Image from url %s sent to chat id - %s", url, message.chat.id
+        )
+    except Exception as e:
+        error_message = (
+            f"Internal Error occured when downloading - {url}.\n"
+            f"Please check the url and try after some time."
+        )
+        logging.error(e)
+        bot.send_message(
+            message.chat.id, error_message,
+        )
 
 
 @bot.message_handler(commands=["start", "help"])
