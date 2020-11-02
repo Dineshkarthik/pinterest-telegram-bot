@@ -50,7 +50,7 @@ def send_image(message):
         bot.send_photo(message.chat.id, image_obj)
         bot.send_message(
             message.chat.id,
-            "[Buy Me Coffee](https://www.buymeacoffee.com/deekay)",
+            "[🥤 Buy Me Coffee](https://www.buymeacoffee.com/deekay)",
             parse_mode="MARKDOWN",
             disable_web_page_preview=True,
         )
