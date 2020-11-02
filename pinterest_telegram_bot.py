@@ -48,6 +48,12 @@ def send_image(message):
             raise InvalidUrlError(f"'{url}' not a valid url")
         image_obj = get_image(url)
         bot.send_photo(message.chat.id, image_obj)
+        bot.send_message(
+            message.chat.id,
+            "[Buy Me Coffee](https://www.buymeacoffee.com/deekay)",
+            parse_mode="MARKDOWN",
+            disable_web_page_preview=True,
+        )
         logging.info(
             "Image from url %s sent to chat id - %s", url, message.chat.id
         )
