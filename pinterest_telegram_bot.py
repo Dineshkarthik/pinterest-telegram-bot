@@ -32,7 +32,7 @@ def get_image(_url: str):
     return img.content
 
 
-@bot.message_handler(commands=["download"])
+@bot.message_handler(commands=["download", "Download"])
 def download_image(message):
     """/download."""
     text = "Please reply with the Pinterest URL to download image."
@@ -80,8 +80,16 @@ def send_image(message):
 def send_instructions(message):
     """/start, /help"""
     msg_content: str = (
-        "*Available commands:*\n\n" "/download - downloads pinterest images"
+        "*Available commands:*\n\n/download - downloads pinterest images"
     )
+    bot.send_message(
+        message.chat.id, msg_content, parse_mode="markdown",
+    )
+
+
+@bot.message_handler(func=lambda m: True)
+def default_message(message):
+    msg_content = """Hi, Please use /download command to download."""
     bot.send_message(
         message.chat.id, msg_content, parse_mode="markdown",
     )
