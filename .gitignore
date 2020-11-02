@@ -131,5 +131,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# long pool local dev bot
+# dev/debug utils
 dev_bot.py
+log.py
+log.txt
