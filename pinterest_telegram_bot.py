@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 
 import requests
@@ -22,20 +23,53 @@ class InvalidUrlError(Exception):
     pass
 
 
-def get_image(_url: str):
+def read_url(_url: str) -> BeautifulSoup:
     r = requests.get(
         _url, headers=server.config["HEADERS"], allow_redirects=True
     )
-    soup = BeautifulSoup(r.text, features="html.parser")
-    img_url: str = soup.find("meta", {"name": "og:image"})["content"]
-    img = requests.get(img_url)
-    return img.content
+    resp = requests.get(
+        r.url.split("/sent")[0],
+        headers=server.config["HEADERS"],
+        allow_redirects=True,
+    )
+    return BeautifulSoup(resp.text, features="html.parser")
+
+
+def extract_video(json_load: dict):
+    try:
+        video_url: str = (
+            json_load.get("resourceResponses", [{}])[0]
+            .get("response", {})
+            .get("data", {})
+            .get("videos", {})
+            .get("video_list", {})
+            .get("V_720P", {})
+            .get("url", None)
+        )
+    except Exception as excp:
+        video_url = None
+    return video_url
+
+
+def extract_image(json_load: dict) -> str:
+    try:
+        img_url: str = (
+            json_load.get("resourceResponses", [{}])[0]
+            .get("response", {})
+            .get("data", {})
+            .get("images", {})
+            .get("orig", {})
+            .get("url", None)
+        )
+    except Exception as excp:
+        img_url = None
+    return img_url
 
 
 @bot.message_handler(commands=["download", "Download"])
 def download_image(message):
     """/download."""
-    text = "Please reply with the Pinterest URL to download image."
+    text = "Please reply with the Pinterest URL to download image/video."
     msg = bot.send_message(message.chat.id, text)
     bot.register_next_step_handler(msg, send_image)
 
@@ -46,8 +80,27 @@ def send_image(message):
         logging.info("%s - requested to download %s", message.chat.id, url)
         if not url.startswith("http"):
             raise InvalidUrlError(f"'{url}' not a valid url")
-        image_obj = get_image(url)
-        bot.send_photo(message.chat.id, image_obj)
+        soup_data = read_url(url)
+        json_load = json.loads(
+            str(soup_data.find("script", {"id": "initial-state"})).strip(
+                """<script id="initial-state" type="application/json">"""
+            )
+        )
+        image_url = (
+            extract_image(json_load)
+            or soup_data.find("meta", {"name": "og:image"})["content"]
+        )
+        video_url = extract_video(json_load)
+        if not video_url:
+            if image_url.endswith(".gif"):
+                media_type: str = "Gif"
+                bot.send_document(message.chat.id, image_url)
+            else:
+                media_type = "Image"
+                bot.send_photo(message.chat.id, image_url)
+        else:
+            media_type = "Video"
+            bot.send_video(message.chat.id, video_url)
         bot.send_message(
             message.chat.id,
             "[🥤 Buy Me Coffee](https://www.buymeacoffee.com/deekay)",
@@ -55,7 +108,10 @@ def send_image(message):
             disable_web_page_preview=True,
         )
         logging.info(
-            "Image from url %s sent to chat id - %s", url, message.chat.id
+            "%s from url %s sent to chat id - %s",
+            media_type,
+            url,
+            message.chat.id,
         )
     except InvalidUrlError:
         error_message = (
