@@ -35,20 +35,22 @@ def read_url(_url: str) -> BeautifulSoup:
     return BeautifulSoup(resp.text, features="html.parser")
 
 
-def extract_video(json_load: dict):
+def extract_video(json_load: dict) -> tuple:
     try:
-        video_url: str = (
+        video_resp: str = (
             json_load.get("resourceResponses", [{}])[0]
             .get("response", {})
             .get("data", {})
             .get("videos", {})
             .get("video_list", {})
             .get("V_720P", {})
-            .get("url", None)
         )
+        video_url: str = video_resp.get("url", None)
+        duration: int = video_resp.get("duration", 0)
     except Exception as excp:
         video_url = None
-    return video_url
+        duration = 0
+    return video_url, duration
 
 
 def extract_image(json_load: dict) -> str:
@@ -90,7 +92,7 @@ def send_image(message):
             extract_image(json_load)
             or soup_data.find("meta", {"name": "og:image"})["content"]
         )
-        video_url = extract_video(json_load)
+        video_url, video_duration = extract_video(json_load)
         if not video_url:
             if image_url.endswith(".gif"):
                 media_type: str = "Gif"
@@ -100,7 +102,20 @@ def send_image(message):
                 bot.send_photo(message.chat.id, image_url)
         else:
             media_type = "Video"
-            bot.send_video(message.chat.id, video_url)
+            if video_duration < 70000:
+                bot.send_video(message.chat.id, video_url)
+            else:
+                media_type = "Video too large"
+                bot.send_message(
+                    message.chat.id,
+                    (
+                        "Due to Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files) "
+                        "the video is too large for the bot to share here."
+                    ),
+                    parse_mode="MARKDOWN",
+                    disable_web_page_preview=True,
+                )
+
         bot.send_message(
             message.chat.id,
             "[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)",
@@ -119,7 +134,8 @@ def send_image(message):
             f"Please check the url and try after some time."
         )
         bot.send_message(
-            message.chat.id, error_message,
+            message.chat.id,
+            error_message,
         )
     except Exception as e:
         error_message = (
@@ -128,7 +144,8 @@ def send_image(message):
         )
         logging.error(e)
         bot.send_message(
-            message.chat.id, error_message,
+            message.chat.id,
+            error_message,
         )
 
 
@@ -139,7 +156,9 @@ def send_instructions(message):
         "*Available commands:*\n\n/download - downloads pinterest images"
     )
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
@@ -147,7 +166,9 @@ def send_instructions(message):
 def default_message(message):
     msg_content = """Hi, Please use /download command to download."""
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
