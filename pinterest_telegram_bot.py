@@ -129,18 +129,14 @@ def send_image(message):
             message.chat.id,
         )
     except InvalidUrlError:
-        error_message = (
-            f"Invalid url - {url}.\n"
-            f"Please check the url and try after some time."
-        )
         bot.send_message(
             message.chat.id,
-            error_message,
+            f"Invalid url - {url}.\nPlease check the url and retry.",
         )
     except Exception as e:
         error_message = (
             f"Internal Error occured when downloading - {url}.\n"
-            f"Please check the url and try after some time."
+            "For support contact - [@pinterest_downloaderbot_support](https://t.me/pinterest_downloaderbot_support)"
         )
         logging.error(e)
         bot.send_message(
