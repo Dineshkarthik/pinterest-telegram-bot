@@ -132,16 +132,16 @@ def send_image(message):
         bot.send_message(
             message.chat.id,
             f"Invalid url - {url}.\nPlease check the url and retry.",
+            disable_web_page_preview=True,
         )
     except Exception as e:
         error_message = (
             f"Internal Error occured when downloading - {url}.\n"
-            "For support contact - [@pinterest_downloaderbot_support](https://t.me/pinterest_downloaderbot_support)"
+            "For support contact - [Pinterest Downloader Support Channel](https://t.me/joinchat/F-YaLRcPqF-__BdvLoSB7Q)"
         )
         logging.error(e)
         bot.send_message(
-            message.chat.id,
-            error_message,
+            message.chat.id, error_message, disable_web_page_preview=True,
         )
 
 
@@ -152,9 +152,7 @@ def send_instructions(message):
         "*Available commands:*\n\n/download - downloads pinterest images"
     )
     bot.send_message(
-        message.chat.id,
-        msg_content,
-        parse_mode="markdown",
+        message.chat.id, msg_content, parse_mode="markdown",
     )
 
 
@@ -162,9 +160,7 @@ def send_instructions(message):
 def default_message(message):
     msg_content = """Hi, Please use /download command to download."""
     bot.send_message(
-        message.chat.id,
-        msg_content,
-        parse_mode="markdown",
+        message.chat.id, msg_content, parse_mode="markdown",
     )
 
 
