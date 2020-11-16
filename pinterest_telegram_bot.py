@@ -18,13 +18,7 @@ bot = TeleBot(TOKEN)
 
 
 class InvalidUrlError(Exception):
-    """Invalid url exception"""
-
-    pass
-
-
-class InvalidPinterestUrlError(Exception):
-    """Not a pinterest url exception"""
+    """Base class for other exceptions"""
 
     pass
 
@@ -38,8 +32,6 @@ def read_url(_url: str) -> BeautifulSoup:
         headers=server.config["HEADERS"],
         allow_redirects=True,
     )
-    if not resp.url.startswith("https://www.pinterest.com"):
-        raise InvalidPinterestUrlError(f"'{_url}' not a valid pinterest url")
     return BeautifulSoup(resp.text, features="html.parser")
 
 
@@ -140,13 +132,6 @@ def send_image(message):
         bot.send_message(
             message.chat.id,
             f"Invalid url - {url}.\nPlease check the url and retry.",
-            disable_web_page_preview=True,
-        )
-    except InvalidPinterestUrlError:
-        bot.send_message(
-            message.chat.id,
-            f"Not a Pinterest url - {url}.\nPlease try with a Pinterest URL.",
-            disable_web_page_preview=True,
         )
     except Exception as e:
         error_message = (
@@ -155,7 +140,8 @@ def send_image(message):
         )
         logging.error(e)
         bot.send_message(
-            message.chat.id, error_message, disable_web_page_preview=True,
+            message.chat.id,
+            error_message,
         )
 
 
@@ -166,7 +152,9 @@ def send_instructions(message):
         "*Available commands:*\n\n/download - downloads pinterest images"
     )
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
@@ -174,7 +162,9 @@ def send_instructions(message):
 def default_message(message):
     msg_content = """Hi, Please use /download command to download."""
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
