@@ -137,7 +137,7 @@ def send_image(message):
     except Exception as e:
         error_message = (
             f"Internal Error occured when downloading - {url}.\n"
-            "For support contact - [Pinterest Downloader Support Channel](https://t.me/joinchat/F-YaLRcPqF-__BdvLoSB7Q)"
+            "For support contact - [Pinterest Downloader Support Channel](https://t.me/pinterest_downloader_bot_support)"
         )
         logging.error(e)
         bot.send_message(
