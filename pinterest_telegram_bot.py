@@ -141,7 +141,10 @@ def send_image(message):
         )
         logging.error(e)
         bot.send_message(
-            message.chat.id, error_message, disable_web_page_preview=True,
+            message.chat.id,
+            error_message,
+            parse_mode="MARKDOWN",
+            disable_web_page_preview=True,
         )
 
 
