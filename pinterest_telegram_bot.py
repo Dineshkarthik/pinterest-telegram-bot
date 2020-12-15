@@ -5,7 +5,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request
-from telebot import TeleBot, types
+from telebot import TeleBot, types, apihelper
 
 logging.basicConfig(level=logging.INFO)
 
@@ -72,6 +72,7 @@ def extract_image(json_load: dict) -> str:
 def download_image(message):
     """/download."""
     text = "Please reply with the Pinterest URL to download image/video."
+    bot.send_chat_action(message.chat.id, "typing")
     msg = bot.send_message(message.chat.id, text)
     bot.register_next_step_handler(msg, send_image)
 
@@ -94,6 +95,7 @@ def send_image(message):
         )
         video_url, video_duration = extract_video(json_load)
         if not video_url:
+            bot.send_chat_action(message.chat.id, "upload_photo")
             if image_url.endswith(".gif"):
                 media_type: str = "Gif"
                 bot.send_document(message.chat.id, image_url)
@@ -101,10 +103,11 @@ def send_image(message):
                 media_type = "Image"
                 bot.send_photo(message.chat.id, image_url)
         else:
+            bot.send_chat_action(message.chat.id, "upload_video")
             media_type = "Video"
-            if video_duration < 70000:
+            try:
                 bot.send_video(message.chat.id, video_url)
-            else:
+            except apihelper.ApiException as e:
                 media_type = "Video too large"
                 bot.send_message(
                     message.chat.id,
@@ -115,7 +118,6 @@ def send_image(message):
                     parse_mode="MARKDOWN",
                     disable_web_page_preview=True,
                 )
-
         bot.send_message(
             message.chat.id,
             "[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)",
@@ -151,19 +153,25 @@ def send_image(message):
 @bot.message_handler(commands=["start", "help"])
 def send_instructions(message):
     """/start, /help"""
+    bot.send_chat_action(message.chat.id, "typing")
     msg_content: str = (
         "*Available commands:*\n\n/download - downloads pinterest images"
     )
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
 @bot.message_handler(func=lambda m: True)
 def default_message(message):
+    bot.send_chat_action(message.chat.id, "typing")
     msg_content = """Hi, Please use /download command to download."""
     bot.send_message(
-        message.chat.id, msg_content, parse_mode="markdown",
+        message.chat.id,
+        msg_content,
+        parse_mode="markdown",
     )
 
 
