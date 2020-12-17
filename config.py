@@ -5,3 +5,4 @@ HEADERS = {
 }
 TOKEN = os.environ.get("BOT_TOKEN")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+REDIS_URL = os.environ.get("REDIS_URL")
