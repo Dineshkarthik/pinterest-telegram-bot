@@ -2,6 +2,7 @@ import os
 import json
 import logging
 
+import redis
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request
@@ -15,6 +16,7 @@ server.config.from_pyfile(os.path.join(THIS_DIR, "config.py"))
 
 TOKEN: str = server.config["TOKEN"]
 bot = TeleBot(TOKEN)
+rdb = redis.from_url(server.config["REDIS_URL"])
 
 
 class InvalidUrlError(Exception):
@@ -83,17 +85,30 @@ def send_image(message):
         logging.info("%s - requested to download %s", message.chat.id, url)
         if not url.startswith("http"):
             raise InvalidUrlError(f"'{url}' not a valid url")
-        soup_data = read_url(url)
-        json_load = json.loads(
-            str(soup_data.find("script", {"id": "initial-state"})).strip(
-                """<script id="initial-state" type="application/json">"""
+        cached_url = rdb.get(url)
+        if not cached_url:
+            soup_data = read_url(url)
+            json_load = json.loads(
+                str(soup_data.find("script", {"id": "initial-state"})).strip(
+                    """<script id="initial-state" type="application/json">"""
+                )
             )
-        )
-        image_url = (
-            extract_image(json_load)
-            or soup_data.find("meta", {"name": "og:image"})["content"]
-        )
-        video_url, video_duration = extract_video(json_load)
+            image_url = (
+                extract_image(json_load)
+                or soup_data.find("meta", {"name": "og:image"})["content"]
+            )
+            video_url, video_duration = extract_video(json_load)
+            rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
+            rdb.expire(url, 1200)
+        else:
+            cached_url = json.loads(cached_url)
+            image_url = cached_url.get("image")
+            video_url = cached_url.get("video")
+            logging.info(
+                "Cache: used for %s requested by chat id - %s",
+                url,
+                message.chat.id,
+            )
         if not video_url:
             bot.send_chat_action(message.chat.id, "upload_photo")
             if image_url.endswith(".gif"):
@@ -155,7 +170,9 @@ def send_instructions(message):
     """/start, /help"""
     bot.send_chat_action(message.chat.id, "typing")
     msg_content: str = (
-        "*Available commands:*\n\n/download - downloads pinterest images"
+        "*Available commands:*\n\n"
+        "/download - downloads pinterest images\n"
+        "To see how to download this video - https://youtu.be/b7ctyUvwzno"
     )
     bot.send_message(
         message.chat.id,
@@ -167,7 +184,10 @@ def send_instructions(message):
 @bot.message_handler(func=lambda m: True)
 def default_message(message):
     bot.send_chat_action(message.chat.id, "typing")
-    msg_content = """Hi, Please use /download command to download."""
+    msg_content: str = (
+        "Hi,\n\nPlease use /download command to download.\n"
+        "Use /help to get assistance with downloading."
+    )
     bot.send_message(
         message.chat.id,
         msg_content,
