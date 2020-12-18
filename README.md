@@ -32,10 +32,12 @@ $ pip3 install -r requirements.txt
 
     TOKEN: 'YOUR_BOT_TOKEN'
     WEBHOOK_URL: 'https://<YOUR_APP_NAME>.herokuapp.com'
+    REDIS_URL: 'redis://<USER_NAME>:<PASSWORD>@<HOST>:<PORT>'
 
 
- - token  - Your Telegram Bot API Token, to get the token follow the instructions available [here](https://core.telegram.org/bots#6-botfather)
+ - token  - Your Telegram Bot API Token, to get the token follow the instructions available [here](https://core.telegram.org/bots#6-botfather).
  - webhook_url - Heroku app url. Instructions for deploying a python to heroku app can be found [here](https://devcenter.heroku.com/articles/getting-started-with-python).
+ - redis_url - Redis is used to cache scraped urls to increase performance, check how to use heroku redis [here](https://devcenter.heroku.com/articles/heroku-redis).
 
 
 ## Execution
