@@ -127,8 +127,10 @@ def send_image(message):
                 bot.send_message(
                     message.chat.id,
                     (
-                        "Due to Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files) "
-                        "the video is too large for the bot to share here."
+                        "Unable to send video here in chat this may be due to "
+                        "Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files)\n"
+                        "the video is too large for the bot to share here.\n"
+                        f"Please download video from the [here]({video_url})"
                     ),
                     parse_mode="MARKDOWN",
                     disable_web_page_preview=True,
