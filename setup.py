@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="pinterest-telegram-bot",
-    version="1.1.0",
+    version="1.2.0",
     author="Dineshkarthik Raveendran",
     author_email="hello@dineshkarthik.me",
     description="A simple script to download media from telegram",
@@ -28,5 +28,10 @@ setup(
         "Topic :: Communications",
         "Topic :: Communications :: Chat",
     ],
+    project_urls={
+        "Tracker": "https://github.com/Dineshkarthik/pinterest-telegram-bot/issues",
+        "Community": "https://t.me/joinchat/Fw-oXxjOcKcuhIHt",
+        "Source": "https://github.com/Dineshkarthik/pinterest-telegram-bot",
+    },
     python_requires=">=3.6",
 )
