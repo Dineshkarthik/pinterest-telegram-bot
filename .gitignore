@@ -135,3 +135,6 @@ dmypy.json
 dev_bot.py
 log.py
 log.txt
+
+.DS_Store
+broadcast.py
