@@ -4,6 +4,7 @@ import logging
 
 import redis
 import requests
+import tldextract
 from bs4 import BeautifulSoup
 from flask import Flask, request
 from telebot import TeleBot, types, apihelper
@@ -25,10 +26,18 @@ class InvalidUrlError(Exception):
     pass
 
 
+class InvalidPinterestUrlError(Exception):
+    """Not a Pinterest url exception"""
+
+    pass
+
+
 def read_url(_url: str) -> BeautifulSoup:
     r = requests.get(
         _url, headers=server.config["HEADERS"], allow_redirects=True
     )
+    if tldextract.extract(r.url).domain != "pinterest":
+        raise InvalidPinterestUrlError(f"'{_url}' not a valid Pinterest url")
     resp = requests.get(
         r.url.split("/sent")[0],
         headers=server.config["HEADERS"],
@@ -130,7 +139,7 @@ def send_image(message):
                         "Unable to send video here in chat this may be due to "
                         "Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files)\n"
                         "the video is too large for the bot to share here.\n"
-                        f"Please download video from the [here]({video_url})"
+                        f"*Please download video from* [here]({video_url})"
                     ),
                     parse_mode="MARKDOWN",
                     disable_web_page_preview=True,
@@ -153,12 +162,18 @@ def send_image(message):
             f"Invalid url - {url}.\nPlease check the url and retry.",
             disable_web_page_preview=True,
         )
+    except InvalidPinterestUrlError:
+        bot.send_message(
+            message.chat.id,
+            f"Not a Pinterest url - {url}.\nPlease try with a Pinterest image or video URL.",
+            disable_web_page_preview=True,
+        )
     except Exception as e:
         error_message = (
             f"Internal Error occured when downloading - {url}.\n"
             "For support contact - [Pinterest Downloader Support Channel](https://t.me/joinchat/F-YaLRcPqF-__BdvLoSB7Q)"
         )
-        logging.error(e)
+        logging.error("Unable to download url - %s due to error %s", url, e)
         bot.send_message(
             message.chat.id,
             error_message,
