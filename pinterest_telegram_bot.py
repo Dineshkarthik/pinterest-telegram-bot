@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import re
+from typing import Optional, Tuple
 
 import redis
 import requests
@@ -21,7 +23,7 @@ rdb = redis.from_url(server.config["REDIS_URL"])
 
 
 class InvalidUrlError(Exception):
-    """Base class for other exceptions"""
+    """Not a valid url exception"""
 
     pass
 
@@ -32,21 +34,74 @@ class InvalidPinterestUrlError(Exception):
     pass
 
 
+def extract_url(text: str) -> Optional[str]:
+    """Extracts url from text
+
+    Parameters
+    ----------
+    text : str
+        String from which url to be extracted.
+
+    Returns
+    -------
+    Optional[str]
+        Return url if present in the given string.
+    """
+    regex_extract = re.search("(?P<url>https?://[^\s]+)", text)
+    return regex_extract.group("url") if regex_extract else None
+
+
 def read_url(_url: str) -> BeautifulSoup:
-    r = requests.get(
-        _url, headers=server.config["HEADERS"], allow_redirects=True
-    )
-    if tldextract.extract(r.url).domain != "pinterest":
-        raise InvalidPinterestUrlError(f"'{_url}' not a valid Pinterest url")
-    resp = requests.get(
-        r.url.split("/sent")[0],
-        headers=server.config["HEADERS"],
-        allow_redirects=True,
-    )
+    """Crawls the given URL.
+
+    Parameters
+    ----------
+    _url : str
+        URL to crawl.
+
+    Returns
+    -------
+    BeautifulSoup
+        Returns crawled webpage as a BeautifulSoup object.
+
+    Raises
+    ------
+    InvalidPinterestUrlError
+        If the given url is not a pinterest url.
+    InvalidUrlError
+        If the given url is not a valid/active url.
+    """
+    try:
+        r = requests.get(
+            _url, headers=server.config["HEADERS"], allow_redirects=True
+        )
+        if tldextract.extract(r.url).domain != "pinterest":
+            raise InvalidPinterestUrlError(
+                f"'{_url}' not a valid Pinterest url"
+            )
+        resp = requests.get(
+            r.url.split("/sent")[0],
+            headers=server.config["HEADERS"],
+            allow_redirects=True,
+        )
+    except Exception as e:
+        raise InvalidUrlError(f"'{_url}' not a valid url")
     return BeautifulSoup(resp.text, features="html.parser")
 
 
-def extract_video(json_load: dict) -> tuple:
+def extract_video(json_load: dict) -> Tuple[Optional[str], int]:
+    """Extracts video url from dict
+
+    Parameters
+    ----------
+    json_load : dict
+        Json load from crawled webpage.
+
+    Returns
+    -------
+    Tuple[Optional[str], int]
+        Video url, video duration
+    """
     try:
         video_resp: str = (
             json_load.get("resourceResponses", [{}])[0]
@@ -64,7 +119,19 @@ def extract_video(json_load: dict) -> tuple:
     return video_url, duration
 
 
-def extract_image(json_load: dict) -> str:
+def extract_image(json_load: dict) -> Optional[str]:
+    """Extracts image url from dictionary.
+
+    Parameters
+    ----------
+    json_load : dict
+        Json load from crawled webpage.
+
+    Returns
+    -------
+    Optional[str]
+        Image url if present.
+    """
     try:
         img_url: str = (
             json_load.get("resourceResponses", [{}])[0]
@@ -80,20 +147,34 @@ def extract_image(json_load: dict) -> str:
 
 
 @bot.message_handler(commands=["download", "Download"])
-def download_image(message):
-    """/download."""
-    text = "Please reply with the Pinterest URL to download image/video."
+def download_image(message: types.Message):
+    """`/download` command handler.
+
+    Parameters
+    ----------
+    message : types.Message
+        Message object from telegram.
+    """
+    text = (
+        "Hi,\nI am an updated bot now, "
+        "you don't need to use the `/download` just send the URL"
+    )
     bot.send_chat_action(message.chat.id, "typing")
-    msg = bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(msg, send_image)
+    msg = bot.send_message(message.chat.id, text, parse_mode="MARKDOWN")
 
 
-def send_image(message):
+def send_image(message: types.Message, url: str):
+    """Sends reply back to the user.
+
+    Parameters
+    ----------
+    message : types.Message
+        Message object from telegram.
+    
+    url : str
+        url to be crawled.
+    """
     try:
-        url: str = message.text
-        logging.info("%s - requested to download %s", message.chat.id, url)
-        if not url.startswith("http"):
-            raise InvalidUrlError(f"'{url}' not a valid url")
         cached_url = rdb.get(url)
         if not cached_url:
             soup_data = read_url(url)
@@ -165,7 +246,10 @@ def send_image(message):
     except InvalidPinterestUrlError:
         bot.send_message(
             message.chat.id,
-            f"Not a Pinterest url - {url}.\nPlease try with a Pinterest image or video URL.",
+            (
+                f"Not a Pinterest url - {url}.\n"
+                "Please try with a Pinterest image or video URL."
+            ),
             disable_web_page_preview=True,
         )
     except Exception as e:
@@ -183,13 +267,18 @@ def send_image(message):
 
 
 @bot.message_handler(commands=["start", "help"])
-def send_instructions(message):
-    """/start, /help"""
+def send_instructions(message: types.Message):
+    """`/start` and `/help` command handler.
+
+    Parameters
+    ----------
+    message : types.Message
+        Message object from telegram.
+    """
     bot.send_chat_action(message.chat.id, "typing")
     msg_content: str = (
-        "*Available commands:*\n\n"
-        "/download - downloads pinterest images\n"
-        "To see how to download this video - https://youtu.be/b7ctyUvwzno"
+        f"Hi {message.from_user.first_name}\n"
+        "To know how to download see this video - https://youtu.be/b7ctyUvwzno"
     )
     bot.send_message(
         message.chat.id,
@@ -199,17 +288,31 @@ def send_instructions(message):
 
 
 @bot.message_handler(func=lambda m: True)
-def default_message(message):
-    bot.send_chat_action(message.chat.id, "typing")
-    msg_content: str = (
-        "Hi,\n\nPlease use /download command to download.\n"
-        "Use /help to get assistance with downloading."
+def default_message(message: types.Message):
+    """Default message handler.
+
+    Parameters
+    ----------
+    message : types.Message
+        Message object from telegram.
+    """
+    logging.info(
+        "%s - requested to download %s", message.chat.id, message.text
     )
-    bot.send_message(
-        message.chat.id,
-        msg_content,
-        parse_mode="markdown",
-    )
+    url: str = extract_url(message.text)
+    if url:
+        send_image(message, url)
+    else:
+        bot.send_chat_action(message.chat.id, "typing")
+        msg_content: str = (
+            f"Hi {message.from_user.first_name},\n\n"
+            f"Invalid url - {message.text}.\nPlease check the url and retry."
+        )
+        bot.send_message(
+            message.chat.id,
+            msg_content,
+            disable_web_page_preview=True,
+        )
 
 
 @server.route("/" + TOKEN, methods=["POST"])
