@@ -138,3 +138,6 @@ log.txt
 
 .DS_Store
 broadcast.py
+
+# vscode
+.vscode
