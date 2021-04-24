@@ -278,7 +278,7 @@ def send_instructions(message: types.Message):
     bot.send_chat_action(message.chat.id, "typing")
     msg_content: str = (
         f"Hi {message.from_user.first_name}\n"
-        "To know how to download see this video - https://youtu.be/b7ctyUvwzno"
+        "To know how to download see this video - https://youtu.be/gffp9_U5lLs"
     )
     bot.send_message(
         message.chat.id,
