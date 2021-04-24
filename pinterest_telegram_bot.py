@@ -170,7 +170,7 @@ def send_image(message: types.Message, url: str):
     ----------
     message : types.Message
         Message object from telegram.
-    
+
     url : str
         url to be crawled.
     """
@@ -283,7 +283,6 @@ def send_instructions(message: types.Message):
     bot.send_message(
         message.chat.id,
         msg_content,
-        parse_mode="markdown",
     )
 
 
