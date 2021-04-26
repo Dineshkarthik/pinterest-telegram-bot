@@ -2,7 +2,7 @@ import os
 import json
 import logging
 import re
-from typing import Optional, Tuple
+from typing import Optional
 
 import redis
 import requests
@@ -89,7 +89,38 @@ def read_url(_url: str) -> BeautifulSoup:
     return BeautifulSoup(resp.text, features="html.parser")
 
 
-def extract_video(json_load: dict) -> Tuple[Optional[str], int]:
+def extract_story(json_load: dict) -> Optional[str]:
+    """Extracts video url from story block in dict
+
+    Parameters
+    ----------
+    json_load : dict
+        Json load from crawled webpage.
+
+    Returns
+    -------
+    Optional[str]
+        if present video url
+    """
+    try:
+        video_url: str = (
+            json_load.get("resourceResponses", [{}])[0]
+            .get("response", {})
+            .get("data", {})
+            .get("story_pin_data", [])
+            .get("pages", [[]])[0]
+            .get("blocks", [{}])[0]
+            .get("video", {})
+            .get("video_list", {})
+            .get("V_EXP7", {})
+            .get("url", None)
+        )
+    except Exception as excp:
+        video_url = None
+    return video_url
+
+
+def extract_video(json_load: dict) -> Optional[str]:
     """Extracts video url from dict
 
     Parameters
@@ -99,24 +130,24 @@ def extract_video(json_load: dict) -> Tuple[Optional[str], int]:
 
     Returns
     -------
-    Tuple[Optional[str], int]
-        Video url, video duration
+    Optional[str]
+        If present Video url
     """
     try:
-        video_resp: str = (
+        video_url: str = (
             json_load.get("resourceResponses", [{}])[0]
             .get("response", {})
             .get("data", {})
             .get("videos", {})
             .get("video_list", {})
             .get("V_720P", {})
+            .get("url", None)
         )
-        video_url: str = video_resp.get("url", None)
-        duration: int = video_resp.get("duration", 0)
     except Exception as excp:
         video_url = None
-        duration = 0
-    return video_url, duration
+    if not video_url:
+        video_url = extract_story(json_load)
+    return video_url
 
 
 def extract_image(json_load: dict) -> Optional[str]:
@@ -187,9 +218,9 @@ def send_image(message: types.Message, url: str):
                 extract_image(json_load)
                 or soup_data.find("meta", {"name": "og:image"})["content"]
             )
-            video_url, video_duration = extract_video(json_load)
+            video_url = extract_video(json_load)
             rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
-            rdb.expire(url, 1200)
+            rdb.expire(url, 3600)
         else:
             cached_url = json.loads(cached_url)
             image_url = cached_url.get("image")
