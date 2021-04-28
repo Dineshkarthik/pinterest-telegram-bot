@@ -1,1 +1,1 @@
-web: python pinterest_telegram_bot.py
+web: gunicorn pinterest_telegram_bot:server
