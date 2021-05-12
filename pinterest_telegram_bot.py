@@ -237,25 +237,33 @@ def send_image(message: types.Message, url: str):
                 bot.send_document(message.chat.id, image_url)
             else:
                 media_type = "Image"
-                bot.send_photo(message.chat.id, image_url)
+                try:
+                    bot.send_photo(message.chat.id, image_url)
+                except:
+                    img = requests.get(image_url)
+                    bot.send_photo(message.chat.id, img.content)
         else:
             bot.send_chat_action(message.chat.id, "upload_video")
             media_type = "Video"
             try:
                 bot.send_video(message.chat.id, video_url)
             except apihelper.ApiException as e:
-                media_type = "Video too large"
-                bot.send_message(
-                    message.chat.id,
-                    (
-                        "Unable to send video here in chat this may be due to "
-                        "Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files)\n"
-                        "the video is too large for the bot to share here.\n"
-                        f"*Please download video from* [here]({video_url})"
-                    ),
-                    parse_mode="MARKDOWN",
-                    disable_web_page_preview=True,
-                )
+                try:
+                    vid = requests.get(video_url)
+                    bot.send_video(message.chat.id, vid.content)
+                except apihelper.ApiException as e:
+                    media_type = "Video too large"
+                    bot.send_message(
+                        message.chat.id,
+                        (
+                            "Unable to send video here in chat this may be due to "
+                            "Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files)\n"
+                            "the video is too large for the bot to share here.\n"
+                            f"*Please download video from* [here]({video_url})"
+                        ),
+                        parse_mode="MARKDOWN",
+                        disable_web_page_preview=True,
+                    )
         bot.send_message(
             message.chat.id,
             "[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)",
@@ -343,7 +351,6 @@ def default_message(message: types.Message):
             msg_content,
             disable_web_page_preview=True,
         )
-
 
 @server.route("/" + TOKEN, methods=["POST"])
 def getMessage():
