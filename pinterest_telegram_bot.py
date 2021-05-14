@@ -248,22 +248,16 @@ def send_image(message: types.Message, url: str):
             try:
                 bot.send_video(message.chat.id, video_url)
             except apihelper.ApiException as e:
-                try:
-                    vid = requests.get(video_url)
-                    bot.send_video(message.chat.id, vid.content)
-                except apihelper.ApiException as e:
-                    media_type = "Video too large"
-                    bot.send_message(
-                        message.chat.id,
-                        (
-                            "Unable to send video here in chat this may be due to "
-                            "Telegram Bots API send file [size limitation](https://core.telegram.org/bots/api#sending-files)\n"
-                            "the video is too large for the bot to share here.\n"
-                            f"*Please download video from* [here]({video_url})"
-                        ),
-                        parse_mode="MARKDOWN",
-                        disable_web_page_preview=True,
-                    )
+                payload = {"url": video_url, "chat_id": message.chat.id}
+                resp = requests.post(
+                    url=server.config["WORKER_URL"],
+                    headers=server.config["WORKER_HEADERS"],
+                    data=payload,
+                )
+                if resp.status_code == 201:
+                    media_type = "Video too long"
+                elif resp.status_code == 501:
+                    raise Exception
         bot.send_message(
             message.chat.id,
             "[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)",
@@ -351,6 +345,7 @@ def default_message(message: types.Message):
             msg_content,
             disable_web_page_preview=True,
         )
+
 
 @server.route("/" + TOKEN, methods=["POST"])
 def getMessage():
