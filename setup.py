@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="pinterest-telegram-bot",
-    version="3.2.0",
+    version="4.0.0",
     author="Dineshkarthik Raveendran",
     author_email="hello@dineshkarthik.me",
     description="A simple script to download media from telegram",
