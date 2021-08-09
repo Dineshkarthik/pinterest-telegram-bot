@@ -21,6 +21,10 @@ TOKEN: str = server.config["TOKEN"]
 bot = TeleBot(TOKEN)
 rdb = redis.from_url(server.config["REDIS_URL"])
 
+SUPPORT_MESSAGE: str = """
+[💶 Donate via PayPal](https://paypal.me/dineshkarthikr)
+[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)
+"""
 
 class InvalidUrlError(Exception):
     """Not a valid url exception"""
@@ -260,7 +264,7 @@ def send_image(message: types.Message, url: str):
                     raise Exception
         bot.send_message(
             message.chat.id,
-            "[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)",
+            SUPPORT_MESSAGE,
             parse_mode="MARKDOWN",
             disable_web_page_preview=True,
         )
