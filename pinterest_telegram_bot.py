@@ -26,6 +26,7 @@ SUPPORT_MESSAGE: str = """
 [🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)
 """
 
+
 class InvalidUrlError(Exception):
     """Not a valid url exception"""
 
@@ -76,13 +77,9 @@ def read_url(_url: str) -> BeautifulSoup:
         If the given url is not a valid/active url.
     """
     try:
-        r = requests.get(
-            _url, headers=server.config["HEADERS"], allow_redirects=True
-        )
+        r = requests.get(_url, headers=server.config["HEADERS"], allow_redirects=True)
         if tldextract.extract(r.url).domain != "pinterest":
-            raise InvalidPinterestUrlError(
-                f"'{_url}' not a valid Pinterest url"
-            )
+            raise InvalidPinterestUrlError(f"'{_url}' not a valid Pinterest url")
         resp = requests.get(
             r.url.split("/sent")[0],
             headers=server.config["HEADERS"],
@@ -138,10 +135,10 @@ def extract_video(json_load: dict) -> Optional[str]:
         If present Video url
     """
     try:
+        pin_id: int = next(iter(json_load["pins"]))
         video_url: str = (
-            json_load.get("resourceResponses", [{}])[0]
-            .get("response", {})
-            .get("data", {})
+            json_load.get("pins", {})
+            .get(pin_id, {})
             .get("videos", {})
             .get("video_list", {})
             .get("V_720P", {})
@@ -332,9 +329,7 @@ def default_message(message: types.Message):
     message : types.Message
         Message object from telegram.
     """
-    logging.info(
-        "%s - requested to download %s", message.chat.id, message.text
-    )
+    logging.info("%s - requested to download %s", message.chat.id, message.text)
     url: str = extract_url(message.text)
     if url:
         send_image(message, url)
