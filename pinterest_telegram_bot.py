@@ -164,10 +164,10 @@ def extract_image(json_load: dict) -> Optional[str]:
         Image url if present.
     """
     try:
+        pin_id: str = next(iter(json_load["pins"]))
         img_url: str = (
-            json_load.get("resourceResponses", [{}])[0]
-            .get("response", {})
-            .get("data", {})
+            json_load.get("pins", {})
+            .get(pin_id, {})
             .get("images", {})
             .get("orig", {})
             .get("url", None)
