@@ -8,4 +8,4 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 REDIS_URL = os.getenv("REDIS_URL")
 WORKER_URL = os.getenv("WORKER_URL")
 WORKER_HEADERS = {"X-API-Key": os.getenv("WORKER_API_KEY")}
-BLOCKED_USERS = os.getenv("BLOCKED_USERS").split()
+BLOCKED_USERS = list(map(int, os.getenv("BLOCKED_USERS").split(",")))
