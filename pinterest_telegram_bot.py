@@ -2,13 +2,13 @@ import os
 import json
 import logging
 import re
-from typing import Optional
+from typing import Optional, Tuple
 
 import redis
 import requests
 import tldextract
 from bs4 import BeautifulSoup
-from flask import Flask, request
+from flask import Flask, config, request
 from telebot import TeleBot, types, apihelper
 
 logging.basicConfig(level=logging.INFO)
@@ -56,7 +56,7 @@ def extract_url(text: str) -> Optional[str]:
     return regex_extract.group("url") if regex_extract else None
 
 
-def read_url(_url: str) -> BeautifulSoup:
+def scrap_url(_url: str) -> BeautifulSoup:
     """Crawls the given URL.
 
     Parameters
@@ -87,7 +87,14 @@ def read_url(_url: str) -> BeautifulSoup:
         )
     except Exception as e:
         raise InvalidUrlError(f"'{_url}' not a valid url")
-    return BeautifulSoup(resp.text, features="html.parser")
+    soup_data = BeautifulSoup(resp.text, features="html.parser")
+    json_load = json.loads(
+        str(soup_data.find("script", {"id": "initial-state"})).strip(
+            """<script id="initial-state" type="application/json">"""
+        )
+    )
+    og_image_url = soup_data.find("meta", {"name": "og:image"})["content"]
+    return json_load, og_image_url
 
 
 def extract_story(json_load: dict) -> Optional[str]:
@@ -194,6 +201,27 @@ def download_image(message: types.Message):
     msg = bot.send_message(message.chat.id, text, parse_mode="MARKDOWN")
 
 
+def get_url(url: str) -> Tuple[str, Optional[str]]:
+    """Extracts image and video url
+
+    Parameters
+    ----------
+    url : str
+        url to be crawled
+
+    Returns
+    -------
+    Tuple[str, Optional[str]]
+        A tuple containing image url and video url if present.
+    """
+    json_load, og_image_url = scrap_url(url)
+    image_url = extract_image(json_load) or og_image_url
+    video_url = extract_video(json_load)
+    rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
+    rdb.expire(url, 3600)
+    return image_url, video_url
+
+
 def send_image(message: types.Message, url: str):
     """Sends reply back to the user.
 
@@ -208,28 +236,19 @@ def send_image(message: types.Message, url: str):
     try:
         cached_url = rdb.get(url)
         if not cached_url:
-            soup_data = read_url(url)
-            json_load = json.loads(
-                str(soup_data.find("script", {"id": "initial-state"})).strip(
-                    """<script id="initial-state" type="application/json">"""
-                )
-            )
-            image_url = (
-                extract_image(json_load)
-                or soup_data.find("meta", {"name": "og:image"})["content"]
-            )
-            video_url = extract_video(json_load)
-            rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
-            rdb.expire(url, 3600)
+            image_url, video_url = get_url(url)
         else:
             cached_url = json.loads(cached_url)
             image_url = cached_url.get("image")
             video_url = cached_url.get("video")
-            logging.info(
-                "Cache: used for %s requested by chat id - %s",
-                url,
-                message.chat.id,
-            )
+            if not video_url:
+                image_url, video_url = get_url(url)
+            else:
+                logging.info(
+                    "Cache: used for %s requested by chat id - %s",
+                    url,
+                    message.chat.id,
+                )
         if not video_url:
             bot.send_chat_action(message.chat.id, "upload_photo")
             if image_url.endswith(".gif"):
@@ -330,13 +349,25 @@ def default_message(message: types.Message):
     """
     logging.info("%s - requested to download %s", message.chat.id, message.text)
     url: str = extract_url(message.text)
-    if url:
-        send_image(message, url)
+    if not message.chat.id in server.config["BLOCKED_USERS"]:
+        if url:
+            send_image(message, url)
+        else:
+            bot.send_chat_action(message.chat.id, "typing")
+            msg_content: str = (
+                f"Hi {message.from_user.first_name},\n\n"
+                f"Invalid url - {message.text}.\nPlease check the url and retry."
+            )
+            bot.send_message(
+                message.chat.id,
+                msg_content,
+                disable_web_page_preview=True,
+            )
     else:
         bot.send_chat_action(message.chat.id, "typing")
         msg_content: str = (
             f"Hi {message.from_user.first_name},\n\n"
-            f"Invalid url - {message.text}.\nPlease check the url and retry."
+            f"You are Blocked and cannot use the bot anymore."
         )
         bot.send_message(
             message.chat.id,
