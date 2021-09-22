@@ -24,6 +24,7 @@ rdb = redis.from_url(server.config["REDIS_URL"])
 SUPPORT_MESSAGE: str = """
 [💶 Donate via PayPal](https://paypal.me/dineshkarthikr) - choose payment type as *Friends and Family*
 [🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)
+[▶️ Subscribe to my Youtube Channel](https://www.youtube.com/channel/UC-qpRMgBCbjWSS0XfTWFcYQ)
 """
 
 
