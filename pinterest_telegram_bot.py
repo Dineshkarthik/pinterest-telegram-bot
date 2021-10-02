@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import re
+import random
 from typing import Optional, Tuple
 
 import redis
@@ -283,6 +284,11 @@ def send_image(message: types.Message, url: str):
             SUPPORT_MESSAGE,
             parse_mode="MARKDOWN",
             disable_web_page_preview=True,
+        )
+        bot.send_message(
+            message.chat.id,
+            f"Watch - {random.choices(server.config['YT_VIDEOS'])[0]}",
+            parse_mode="MARKDOWN",
         )
         logging.info(
             "%s from url %s sent to chat id - %s",
