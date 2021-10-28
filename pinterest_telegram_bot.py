@@ -91,10 +91,10 @@ def scrap_url(_url: str) -> BeautifulSoup:
         raise InvalidUrlError(f"'{_url}' not a valid url")
     soup_data = BeautifulSoup(resp.text, features="html.parser")
     json_load = json.loads(
-        str(soup_data.find("script", {"id": "initial-state"})).strip(
-            """<script id="initial-state" type="application/json">"""
+        str(soup_data.find("script", {"id": "__PWS_DATA__"})).strip(
+            """<script id="__PWS_DATA__" type="application/json">"""
         )
-    )
+    )["props"]["initialReduxState"]
     og_image_url = soup_data.find("meta", {"name": "og:image"})["content"]
     return json_load, og_image_url
 
