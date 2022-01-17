@@ -24,7 +24,6 @@ rdb = redis.from_url(server.config["REDIS_URL"])
 
 SUPPORT_MESSAGE: str = """
 [💶 Donate via PayPal](https://paypal.me/dineshkarthikr) - choose payment type as *Friends and Family*
-[🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)
 [▶️ Subscribe to my Youtube Channel](https://www.youtube.com/channel/UC-qpRMgBCbjWSS0XfTWFcYQ)
 """
 
@@ -219,8 +218,11 @@ def get_url(url: str) -> Tuple[str, Optional[str]]:
     json_load, og_image_url = scrap_url(url)
     image_url = extract_image(json_load) or og_image_url
     video_url = extract_video(json_load)
-    rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
-    rdb.expire(url, 3600)
+    try:
+        rdb.set(url, json.dumps({"image": image_url, "video": video_url}))
+        rdb.expire(url, 3600)
+    except Exception as e:
+        logging.warn(e)
     return image_url, video_url
 
 
@@ -236,7 +238,11 @@ def send_image(message: types.Message, url: str):
         url to be crawled.
     """
     try:
-        cached_url = rdb.get(url)
+        try:
+            cached_url = rdb.get(url)
+        except Exception as e:
+            logging.warn(e)
+            cached_url = None
         if not cached_url:
             image_url, video_url = get_url(url)
         else:
