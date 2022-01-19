@@ -364,7 +364,7 @@ def default_message(message: types.Message):
     logging.info("%s - requested to download %s", message.chat.id, message.text)
     url: str = extract_url(message.text)
     # adding wait time as not to hit the bot rate limits - 429 telegram API error
-    time.sleep(0.3)
+    time.sleep(0.4)
     if not message.chat.id in server.config["BLOCKED_USERS"]:
         if url:
             send_image(message, url)
