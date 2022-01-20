@@ -1,1 +1,1 @@
-web: gunicorn pinterest_telegram_bot:server --worker-class=gevent --workers=4
+web: gunicorn pinterest_telegram_bot:server --worker-class=gevent --max-requests=200
