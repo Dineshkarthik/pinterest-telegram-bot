@@ -115,8 +115,9 @@ def extract_story(json_load: dict) -> Optional[str]:
     try:
         pin_id: str = next(iter(json_load["storyPins"]))
         video_url: str = (
-            json_load.get("storyPins", {})
+            json_load.get("pins", {})
             .get(pin_id, {})
+            .get("story_pin_data", {})
             .get("pages", [[]])[0]
             .get("blocks", [{}])[0]
             .get("video", {})
