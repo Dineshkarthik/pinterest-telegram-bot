@@ -113,7 +113,7 @@ def extract_story(json_load: dict) -> Optional[str]:
         if present video url
     """
     try:
-        pin_id: str = next(iter(json_load["storyPins"]))
+        pin_id: str = next(iter(json_load["pins"]))
         video_url: str = (
             json_load.get("pins", {})
             .get(pin_id, {})
