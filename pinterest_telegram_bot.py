@@ -24,9 +24,9 @@ bot = TeleBot(TOKEN)
 rdb = redis.from_url(server.config["REDIS_URL"])
 
 SUPPORT_MESSAGE: str = """
-[💶 Donate via PayPal](https://paypal.me/dineshkarthikr)
 [💵 Donate via Stripe](https://donate.stripe.com/28o6s280ReHU3V6fYY)
 [🥤 Buy Me a Coffee](https://www.buymeacoffee.com/deekay)
+[💶 Donate via PayPal](https://paypal.me/dineshkarthikr)
 
 [▶️ Subscribe to my Youtube Channel](https://www.youtube.com/channel/UC-qpRMgBCbjWSS0XfTWFcYQ)
 """
