@@ -85,8 +85,10 @@ def scrap_url(_url: str) -> BeautifulSoup:
         r = requests.get(_url, headers=server.config["HEADERS"], allow_redirects=True)
         if tldextract.extract(r.url).domain != "pinterest":
             raise InvalidPinterestUrlError(f"'{_url}' not a valid Pinterest url")
+        long_url = r.url.split("/sent")[0]
+        print(_url, r.url, long_url)
         resp = requests.get(
-            r.url.split("/sent")[0],
+            long_url,
             headers=server.config["HEADERS"],
             allow_redirects=True,
         )
