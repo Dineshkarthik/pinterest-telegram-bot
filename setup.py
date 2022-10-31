@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="pinterest-telegram-bot",
-    version="5.4.2",
+    version="5.5.0",
     author="Dineshkarthik Raveendran",
     author_email="hello@dineshkarthik.me",
     description="Telegram bot to dowload and send media from Pinterest",
