@@ -1,9 +1,11 @@
+from cmath import log
 import os
 import json
 import logging
 import re
 import random
 import time
+from tkinter import E
 from typing import Optional, Tuple
 
 import redis
@@ -61,6 +63,28 @@ def extract_url(text: str) -> Optional[str]:
     return regex_extract.group("url") if regex_extract else None
 
 
+def call_pinterest_url_shortner_api(short_code: str) -> str:
+    """Directly call the pinterest url shortner api to get full url.
+
+    Parameters
+    ----------
+    short_code : str
+        URL shortner code from shortned url.
+
+    Returns
+    -------
+    Optional[str]
+        Return full url ifretuened by the shortner api.
+
+    """
+    try:
+        _url: str = f"https://api.pinterest.com/url_shortener/{short_code}/redirect/"
+        r = requests.get(_url, headers=server.config["HEADERS"], allow_redirects=True)
+        return r.url.split("/sent")[0]
+    except Exception as e:
+        logging.exception(e)
+
+
 def scrap_url(_url: str) -> BeautifulSoup:
     """Crawls the given URL.
 
@@ -86,7 +110,8 @@ def scrap_url(_url: str) -> BeautifulSoup:
         if tldextract.extract(r.url).domain != "pinterest":
             raise InvalidPinterestUrlError(f"'{_url}' not a valid Pinterest url")
         long_url = r.url.split("/sent")[0]
-        print(_url, r.url, long_url)
+        if "/pin/" not in long_url:
+            long_url = call_pinterest_url_shortner_api(_url.split("/pin.it/")[-1])
         resp = requests.get(
             long_url,
             headers=server.config["HEADERS"],
