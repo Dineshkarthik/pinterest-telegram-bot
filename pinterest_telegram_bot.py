@@ -5,7 +5,6 @@ import logging
 import re
 import random
 import time
-from tkinter import E
 from typing import Optional, Tuple
 
 import redis
