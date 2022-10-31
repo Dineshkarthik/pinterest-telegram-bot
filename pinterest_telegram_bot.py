@@ -78,6 +78,7 @@ def call_pinterest_url_shortner_api(short_code: str) -> str:
     try:
         _url: str = f"https://api.pinterest.com/url_shortener/{short_code}/redirect/"
         r = requests.get(_url, headers=server.config["HEADERS"], allow_redirects=True)
+        print(_url, r.url)
         return r.url.split("/sent")[0]
     except Exception as e:
         logging.exception(e)
@@ -110,6 +111,7 @@ def scrap_url(_url: str) -> BeautifulSoup:
         long_url = r.url.split("/sent")[0]
         if "/pin/" not in long_url:
             long_url = call_pinterest_url_shortner_api(_url.split("/pin.it/")[-1])
+        print(_url, long_url)
         resp = requests.get(
             long_url,
             headers=server.config["HEADERS"],
